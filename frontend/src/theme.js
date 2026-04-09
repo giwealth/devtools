@@ -35,7 +35,7 @@ export function getStoredTheme() {
   } catch {
     /* ignore */
   }
-  return "dark";
+  return "light";
 }
 
 export function applyTheme(mode) {
@@ -54,7 +54,7 @@ export function initTheme() {
 }
 
 export function toggleTheme() {
-  const cur = document.documentElement.dataset.theme || "dark";
+  const cur = document.documentElement.dataset.theme || "light";
   applyTheme(cur === "light" ? "dark" : "light");
 }
 

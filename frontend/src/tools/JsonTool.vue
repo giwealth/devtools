@@ -18,7 +18,7 @@ const validateState = ref(""); // '' | 'ok' | 'bad'
 const indentMode = ref("4");
 /** @type {import('vue').Ref<Set<string>>} */
 const jsonTreeCollapsed = ref(new Set());
-const viewMode = ref("formatted"); // 'formatted' | 'tree'
+const viewMode = ref("tree"); // 'formatted' | 'tree'
 
 const taScroll = ref(0);
 
@@ -29,8 +29,14 @@ const inputLineCount = computed(() => {
 });
 
 const treeActionsEnabled = computed(() => parsedData.value != null && !inputError.value);
+const jsonTreeIndentPx = computed(() => {
+  if (indentMode.value === "2") return 18;
+  if (indentMode.value === "tab") return 48;
+  return 32;
+});
 
 provide("jsonTreeCollapsed", jsonTreeCollapsed);
+provide("jsonTreeIndentPx", jsonTreeIndentPx);
 
 let debounceTimer = null;
 
@@ -62,11 +68,13 @@ function applyBeautify() {
     plainOutput.value = formatted;
     outputHtml.value = highlightFormattedJSON(formatted, indentHighlightOption());
     inputError.value = false;
+    viewMode.value = "tree";
   } catch (e) {
     outputHtml.value = `<div class="json-hl-err">Error: ${escapeAttr(e.message)}</div>`;
     plainOutput.value = "";
     parsedData.value = null;
     inputError.value = true;
+    viewMode.value = "formatted";
   }
 }
 
@@ -93,11 +101,13 @@ function applyMinify() {
     plainOutput.value = minified;
     outputHtml.value = highlightFormattedJSON(minified.replace(/\n/g, ""), indentHighlightOption());
     inputError.value = false;
+    viewMode.value = "tree";
   } catch (e) {
     outputHtml.value = `<div class="json-hl-err">Error: ${escapeAttr(e.message)}</div>`;
     plainOutput.value = "";
     parsedData.value = null;
     inputError.value = true;
+    viewMode.value = "formatted";
   }
 }
 
@@ -129,7 +139,7 @@ function clearAll() {
   inputError.value = false;
   validateState.value = "";
   jsonTreeCollapsed.value = new Set();
-  viewMode.value = "formatted";
+  viewMode.value = "tree";
 }
 
 function expandTreeAll() {
@@ -153,10 +163,6 @@ function switchToTreeCollapsed() {
   if (!treeActionsEnabled.value) return;
   viewMode.value = "tree";
   collapseTreeAll();
-}
-
-function showFormatted() {
-  viewMode.value = "formatted";
 }
 
 async function copyOut() {
@@ -315,30 +321,27 @@ function validateLabel() {
         <div class="j-pane__head j-pane__head--split">
           <span class="j-pane__head-title">{{ t("tools.json.outputHeader") }}</span>
           <div class="j-out-actions">
-            <template v-if="viewMode === 'formatted'">
-              <button type="button" class="j-link" :disabled="!treeActionsEnabled" @click="switchToTreeExpanded">
-                {{ t("tools.json.expandAll") }}
-              </button>
-              <span class="j-out-actions__sep">|</span>
-              <button type="button" class="j-link" :disabled="!treeActionsEnabled" @click="switchToTreeCollapsed">
-                {{ t("tools.json.collapseAll") }}
-              </button>
-            </template>
-            <template v-else>
-              <button type="button" class="j-link" :disabled="!treeActionsEnabled" @click="expandTreeAll">
-                {{ t("tools.json.expandAll") }}
-              </button>
-              <span class="j-out-actions__sep">|</span>
-              <button type="button" class="j-link" :disabled="!treeActionsEnabled" @click="collapseTreeAll">
-                {{ t("tools.json.collapseAll") }}
-              </button>
-              <span class="j-out-actions__sep">|</span>
-              <button type="button" class="j-link" @click="showFormatted">{{ t("tools.json.formattedView") }}</button>
-            </template>
+            <button
+              type="button"
+              class="j-link"
+              :disabled="!treeActionsEnabled"
+              @click="expandTreeAll"
+            >
+              {{ t("tools.json.expandAll") }}
+            </button>
+            <span class="j-out-actions__sep">|</span>
+            <button
+              type="button"
+              class="j-link"
+              :disabled="!treeActionsEnabled"
+              @click="collapseTreeAll"
+            >
+              {{ t("tools.json.collapseAll") }}
+            </button>
           </div>
         </div>
-        <div v-show="viewMode === 'formatted'" class="j-out json-out j-out--numbered" v-html="outputHtml" />
-        <div v-show="viewMode === 'tree'" class="j-out j-out--tree json-out json-out--tree">
+        <div v-if="inputError" class="j-out json-out j-out--numbered" v-html="outputHtml" />
+        <div v-else class="j-out j-out--tree j-out--tree-numbered json-out json-out--tree">
           <JsonTreeNode v-if="parsedData != null && !inputError" :data="parsedData" :path="'$'" :depth="0" />
         </div>
       </div>
@@ -567,9 +570,9 @@ function validateLabel() {
 }
 
 .j-gutter {
-  flex: 0 0 2.75rem;
+  flex: 0 0 2.5rem;
   overflow: hidden;
-  padding: 0.75rem 0 0.75rem 0.35rem;
+  padding: 0.75rem 0;
   background: var(--surface);
   border-right: 1px solid var(--border);
   user-select: none;
@@ -659,6 +662,28 @@ function validateLabel() {
   min-width: 0;
   font-size: 0.8125rem;
   line-height: 1.5;
+}
+
+/* 树视图行号（与格式化视图一致显示） */
+.j-out--tree-numbered {
+  counter-reset: jsontree 0;
+}
+
+.j-out--tree-numbered :deep(.jt-row) {
+  counter-increment: jsontree;
+}
+
+.j-out--tree-numbered :deep(.jt-row::before) {
+  content: counter(jsontree);
+  display: inline-block;
+  width: 2rem;
+  margin-right: 0.65rem;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  user-select: none;
+  line-height: 1.5;
+  flex: 0 0 auto;
 }
 
 :deep(.json-hl__brace) {

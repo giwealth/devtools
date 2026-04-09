@@ -30,7 +30,7 @@ function isActive(path) {
 const themeMode = ref(
   typeof document !== "undefined"
     ? document.documentElement.dataset.theme || getStoredTheme()
-    : "dark",
+    : "light",
 );
 const themeIsLight = computed(() => themeMode.value === "light");
 
@@ -72,18 +72,18 @@ function setLang(code) {
             <button
               type="button"
               class="devtools-shell__seg-btn"
-              :class="{ 'devtools-shell__seg-btn--on': !themeIsLight }"
-              @click="setTheme('dark')"
-            >
-              {{ t("shell.themeDark") }}
-            </button>
-            <button
-              type="button"
-              class="devtools-shell__seg-btn"
               :class="{ 'devtools-shell__seg-btn--on': themeIsLight }"
               @click="setTheme('light')"
             >
               {{ t("shell.themeLight") }}
+            </button>
+            <button
+              type="button"
+              class="devtools-shell__seg-btn"
+              :class="{ 'devtools-shell__seg-btn--on': !themeIsLight }"
+              @click="setTheme('dark')"
+            >
+              {{ t("shell.themeDark") }}
             </button>
           </div>
         </div>

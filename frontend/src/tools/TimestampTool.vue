@@ -60,7 +60,8 @@ function applyTsToDate() {
 }
 
 function applyDateToTs() {
-  const r = dateStringToUnix(dateIn.value, timezone.value, timeUnit.value);
+  const normalizedInput = normalizeDateInput(dateIn.value);
+  const r = dateStringToUnix(normalizedInput, timezone.value, timeUnit.value);
   if (!r.ok) {
     tsOut.value = r.value;
     return;
@@ -69,7 +70,7 @@ function applyDateToTs() {
 }
 
 function useNow() {
-  dateIn.value = formatTimeByTimezone(new Date(), timezone.value);
+  dateIn.value = formatTimeByTimezone(new Date(), timezone.value).replace(" ", "T");
   applyDateToTs();
 }
 
@@ -98,6 +99,15 @@ onMounted(() => {
 
 onUnmounted(() => clearInterval(timer));
 
+function normalizeDateInput(raw) {
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) return "";
+  // datetime-local emits "YYYY-MM-DDTHH:mm" or "YYYY-MM-DDTHH:mm:ss"
+  const s = trimmed.replace("T", " ");
+  if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}$/.test(s)) return `${s}:00`;
+  return s;
+}
+
 async function copyField(val) {
   if (!val) return;
   await copyText(val);
@@ -121,7 +131,15 @@ async function copyField(val) {
         </div>
         <div class="ts-clock-card__body">
           <span class="ts-clock-card__label">{{ t("tools.timestamp.currentTime") }}</span>
-          <div class="ts-clock-card__ts mono">{{ nowTs }}</div>
+          <button
+            type="button"
+            class="ts-clock-card__ts ts-clock-card__ts--copy mono"
+            :title="t('tools.timestamp.copyOutput')"
+            :aria-label="t('tools.timestamp.copyOutput')"
+            @click="copyField(nowTs)"
+          >
+            {{ nowTs }}
+          </button>
           <div class="ts-clock-card__human mono">{{ nowFormatted }}</div>
         </div>
         <button
@@ -253,8 +271,8 @@ async function copyField(val) {
               <input
                 v-model="dateIn"
                 class="ts-input mono"
-                type="text"
-                :placeholder="t('tools.timestamp.placeholderDate')"
+                type="datetime-local"
+                step="1"
                 @keyup.enter="applyDateToTs"
               />
             </div>
@@ -385,6 +403,20 @@ async function copyField(val) {
   color: var(--text);
   line-height: 1.2;
   word-break: break-all;
+}
+
+.ts-clock-card__ts--copy {
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ts-clock-card__ts--copy:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .ts-clock-card__human {

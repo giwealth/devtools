@@ -61,6 +61,30 @@ function revoke() {
   }
 }
 
+function syncFormatByMimeType(mime) {
+  const m = String(mime || "").toLowerCase();
+  if (m === "image/jpeg" || m === "image/jpg" || m === "image/pjpeg") {
+    format.value = "jpg";
+    return;
+  }
+  if (m === "image/png") {
+    format.value = "png";
+    return;
+  }
+  if (m === "image/webp") {
+    format.value = "webp";
+    return;
+  }
+  if (m === "image/avif") {
+    format.value = "avif";
+    return;
+  }
+  // GIF/BMP/TIFF 等未直接提供同格式导出，默认回落到 PNG。
+  if (m.startsWith("image/")) {
+    format.value = "png";
+  }
+}
+
 function loadFile(file) {
   if (!file || !file.type.startsWith("image/")) return;
   if (file.size > 10 * 1024 * 1024) {
@@ -68,6 +92,7 @@ function loadFile(file) {
     return;
   }
   revoke();
+  syncFormatByMimeType(file.type);
   originalBlob.value = file;
   objectUrl = URL.createObjectURL(file);
   const img = new Image();
@@ -545,20 +570,10 @@ onUnmounted(() => {
               </svg>
             </button>
             <button type="button" class="img-tb-btn" :title="t('tools.image.rotateL')" @click.stop="rotL">
-              <svg class="img-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M6.35 7.41L.54 12l5.81 4.59L8 15.59 3.62 12 8 8.41 6.35 7.41zM13 7v2h7c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1h-4v2h4c1.66 0 3-1.34 3-3v-8c0-1.66-1.34-3-3-3h-7z"
-                />
-              </svg>
+              <span class="material-symbols-outlined img-tb-ms" aria-hidden="true">rotate_left</span>
             </button>
             <button type="button" class="img-tb-btn" :title="t('tools.image.rotateR')" @click.stop="rotR">
-              <svg class="img-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M17.65 7.41L16 8.41 20.38 12 16 15.59l1.65 1.41L23.46 12l-5.81-4.59zM8 7v2H1c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h4v2H1c-1.66 0-3-1.34-3-3v-8c0-1.66 1.34-3 3-3h7z"
-                />
-              </svg>
+              <span class="material-symbols-outlined img-tb-ms" aria-hidden="true">rotate_right</span>
             </button>
             <span class="img-tb-divider" aria-hidden="true" />
             <button type="button" class="img-tb-btn" :title="t('tools.image.zoomOut')" @click.stop="zoomOut">
@@ -660,12 +675,7 @@ onUnmounted(() => {
         <div class="img-card">
           <div class="img-card__head">
             <div class="img-card__title-row">
-              <svg class="img-ico img-ico--primary" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M4 9h16v2H4V9zm0 4h10v2H4v-2zm0 4h16v2H4v-2z"
-                />
-              </svg>
+              <span class="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">compress</span>
               <span class="img-card__title">{{ t("tools.image.compress") }}</span>
             </div>
             <span class="img-card__badge font-mono">{{ t("tools.image.qualityBadge", { n: quality }) }}</span>
@@ -692,12 +702,7 @@ onUnmounted(() => {
         <div class="img-card">
           <div class="img-card__head img-card__head--simple">
             <div class="img-card__title-row">
-              <svg class="img-ico img-ico--primary" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM17 9.99V14H14v2h3.01V19L21 15l-3.99-4z"
-                />
-              </svg>
+              <span class="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">swap_horiz</span>
               <span class="img-card__title">{{ t("tools.image.convert") }}</span>
             </div>
           </div>
@@ -921,6 +926,15 @@ onUnmounted(() => {
   width: 1.25rem;
   height: 1.25rem;
   display: block;
+}
+
+.img-tb-ms.material-symbols-outlined {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .img-ico--sm {

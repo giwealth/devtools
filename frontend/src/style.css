@@ -12,6 +12,18 @@
   }
 
   html {
+    color-scheme: light;
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface-elevated: #fafcfd;
+    --surface-hover: #e8eef4;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --json-pane-bg: #f6f8fa;
+  }
+
+  html[data-theme="dark"] {
     color-scheme: dark;
     --bg: #101922;
     --surface: #111418;
@@ -21,19 +33,6 @@
     --text: #f8fafc;
     --text-muted: #9dabb9;
     --json-pane-bg: #0d1117;
-  }
-
-  html[data-theme="light"] {
-    color-scheme: light;
-    --bg: #f0f4f8;
-    --surface: #ffffff;
-    --surface-elevated: #fafcfd;
-    --surface-hover: #e8eef4;
-    /* 浅灰描边，避免在浅色底上仍像暗色主题边框 */
-    --border: #e2e8f0;
-    --text: #0f172a;
-    --text-muted: #64748b;
-    --json-pane-bg: #f6f8fa;
   }
 
   html,

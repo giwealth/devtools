@@ -11,6 +11,7 @@ const props = defineProps({
 });
 
 const collapsedSet = inject("jsonTreeCollapsed");
+const treeIndentPx = inject("jsonTreeIndentPx", computed(() => 16));
 
 function isContainer(v) {
   return v !== null && typeof v === "object";
@@ -42,7 +43,7 @@ function childPathSegment(k) {
 const pad = computed(() => ({ paddingLeft: pr(props.depth) }));
 
 function pr(d) {
-  return `${d * 16}px`;
+  return `${d * Number(treeIndentPx.value || 16)}px`;
 }
 
 function esc(s) {
@@ -76,28 +77,32 @@ const arrayItems = computed(() => {
 <template>
   <div class="jt-node">
     <template v-if="!container">
-      <div class="jt-row" :style="pad">
-        <span v-if="entryKey !== null && !isArrayItem" class="jt-key">"{{ entryKey }}"</span>
-        <span v-if="entryKey !== null && !isArrayItem" class="jt-punct">: </span>
-        <span v-if="entryKey !== null && isArrayItem" class="jt-idx">{{ entryKey }}: </span>
-        <span v-html="fmtPrimitive(data)" />
+      <div class="jt-row">
+        <div class="jt-row__content" :style="pad">
+          <span v-if="entryKey !== null && !isArrayItem" class="jt-key">"{{ entryKey }}"</span>
+          <span v-if="entryKey !== null && !isArrayItem" class="jt-punct">: </span>
+          <span v-if="entryKey !== null && isArrayItem" class="jt-idx">{{ entryKey }}: </span>
+          <span v-html="fmtPrimitive(data)" />
+        </div>
       </div>
     </template>
 
     <template v-else>
-      <div class="jt-row jt-row--hdr" :style="pad" @click="toggle">
-        <span class="jt-chevron">{{ collapsed ? "▶" : "▼" }}</span>
-        <span v-if="entryKey !== null && !isArrayItem" class="jt-key">"{{ entryKey }}"</span>
-        <span v-if="entryKey !== null && !isArrayItem" class="jt-punct">: </span>
-        <span v-if="entryKey !== null && isArrayItem" class="jt-idx">{{ entryKey }}: </span>
+      <div class="jt-row jt-row--hdr" @click="toggle">
+        <div class="jt-row__content" :style="pad">
+          <span v-if="entryKey !== null && !isArrayItem" class="jt-key">"{{ entryKey }}"</span>
+          <span v-if="entryKey !== null && !isArrayItem" class="jt-punct">: </span>
+          <span v-if="entryKey !== null && isArrayItem" class="jt-idx">{{ entryKey }}: </span>
+          <span class="jt-chevron material-symbols-outlined" :class="{ 'jt-chevron--expanded': !collapsed }">chevron_right</span>
 
-        <template v-if="collapsed">
-          <span class="jt-br">{{ isArr ? "Array" : "Object" }}</span>
-          <span class="jt-br">{{ "{" + childCount + "}" }}</span>
-        </template>
-        <template v-else>
-          <span class="jt-br">{{ isArr ? "[" : "{" }}</span>
-        </template>
+          <template v-if="collapsed">
+            <span class="jt-br">{{ isArr ? "Array" : "Object" }}</span>
+            <span class="jt-br">{{ "{" + childCount + "}" }}</span>
+          </template>
+          <template v-else>
+            <span class="jt-br">{{ isArr ? "[" : "{" }}</span>
+          </template>
+        </div>
       </div>
 
       <template v-if="!collapsed">
@@ -119,8 +124,10 @@ const arrayItems = computed(() => {
           :depth="depth + 1"
           :is-array-item="true"
         />
-        <div class="jt-row" :style="pad">
-          <span class="jt-br">{{ isArr ? "]" : "}" }}</span>
+        <div class="jt-row">
+          <div class="jt-row__content" :style="pad">
+            <span class="jt-br">{{ isArr ? "]" : "}" }}</span>
+          </div>
         </div>
       </template>
     </template>
@@ -135,25 +142,42 @@ const arrayItems = computed(() => {
 }
 .jt-row {
   display: flex;
+  cursor: default;
+  min-height: 1.45em;
+}
+.jt-row__content {
+  display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 0.15rem;
-  cursor: default;
-  min-height: 1.45em;
+  min-width: 0;
 }
 .jt-row--hdr {
   cursor: pointer;
   border-radius: 0.25rem;
 }
+.jt-row--hdr .jt-row__content {
+  align-items: center;
+}
 .jt-row--hdr:hover {
   background: var(--surface-hover);
 }
 .jt-chevron {
-  display: inline-block;
-  width: 1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  font-size: 1rem;
+  line-height: 1;
   color: #94a3b8;
   user-select: none;
   flex-shrink: 0;
+  transition: transform 0.15s ease;
+  transform-origin: 50% 50%;
+}
+.jt-chevron--expanded {
+  transform: rotate(90deg);
 }
 .jt-key {
   color: #c084fc;
