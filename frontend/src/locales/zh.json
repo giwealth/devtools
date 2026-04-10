@@ -173,6 +173,7 @@
       "rotateFirst": "请先归零旋转角度再裁剪",
       "pickFirst": "请先选择图片",
       "icoEncodeFailed": "ICO 生成失败，请重试。",
+      "icoSizesLabel": "ICO 尺寸",
       "avifUnsupported": "当前环境无法导出 AVIF，请换用其他格式。"
     }
   }

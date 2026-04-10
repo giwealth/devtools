@@ -141,6 +141,16 @@
     background-color: var(--bg);
   }
 
+  /* 让子页面（如图片工具）能用 flex 撑满主区域可视高度 */
+  .devtools-shell__route {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    align-items: stretch;
+  }
+
   .devtools-shell__brand {
     display: flex;
     align-items: center;

@@ -10,6 +10,10 @@ export function ApplicationMenu() {
   return window['go']['main']['App']['ApplicationMenu']();
 }
 
+export function EncodeIcoFromPngBase64(arg1, arg2) {
+  return window['go']['main']['App']['EncodeIcoFromPngBase64'](arg1, arg2);
+}
+
 export function OpenURL(arg1) {
   return window['go']['main']['App']['OpenURL'](arg1);
 }

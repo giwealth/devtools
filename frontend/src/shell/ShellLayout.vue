@@ -116,7 +116,9 @@ function setLang(code) {
       </p>
     </aside>
     <main class="devtools-shell__main">
-      <RouterView />
+      <div class="devtools-shell__route">
+        <RouterView />
+      </div>
     </main>
   </div>
 </template>

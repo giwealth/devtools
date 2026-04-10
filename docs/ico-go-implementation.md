@@ -308,3 +308,16 @@ const blob = await fetch(`data:image/x-icon;base64,${icoB64}`).then((r) => r.blo
 - 实现步骤可归纳为：**PNG 解码 → 按档位缩放（draw）→ png.BestCompression 编码 → `EncodeFromPNGBlobs` → 经 Wails 交回前端下载**。
 
 将 `ico` 逻辑放在独立包（例如 `internal/ico`）便于单测与复用； `docs` 仅作设计说明，落地时以 `go test` 与集成测试为准。
+
+---
+
+## 8. 本仓库落地状态（已实现）
+
+| 位置 | 说明 |
+|------|------|
+| `internal/ico/` | `BuildSingleFrameICO`、`EncodeFromPNGBlobs`、`RasterContainCopy`、`EncodePNGBest`；`go test ./internal/ico/...` |
+| `app.go` | `EncodeIcoFromPngBase64(pngB64, sizesJSON)`：`sizesJSON` 为空或 `[]` 为自动单帧；否则为边长 JSON 数组（如 `[16,32,256]`） |
+| `frontend/src/tools/ImageTool.vue` | ICO 格式下从 16/32/48/64/128/256 选一，默认 **32×32**；始终传 `sizesJSON`（单元素数组）给 Go，浏览器回退用 `buildIcoFromOutputCanvas(oc, [n])` |
+| `frontend/wailsjs/go/main/App.*` | 由 `wails generate module` / `wails build` 自动生成 |
+
+依赖：`go.mod` 中 `golang.org/x/image v0.18.0`（与 `go 1.21` / `toolchain go1.22.2` 兼容）。

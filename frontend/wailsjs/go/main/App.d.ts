@@ -6,4 +6,6 @@ export function AppVersion():Promise<string>;
 
 export function ApplicationMenu():Promise<menu.Menu>;
 
+export function EncodeIcoFromPngBase64(arg1:string,arg2:string):Promise<string>;
+
 export function OpenURL(arg1:string):Promise<void>;

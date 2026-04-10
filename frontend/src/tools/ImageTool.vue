@@ -34,6 +34,12 @@ const cropStart = ref({ x: 0, y: 0 });
 const cropEnd = ref({ x: 0, y: 0 });
 
 const qualityPresets = [30, 60, 80, 100];
+
+const ICO_STANDARD_EDGES = [16, 32, 48, 64, 128, 256];
+const icoSizePresets = ICO_STANDARD_EDGES.map((n) => ({ id: String(n), label: `${n}×${n}` }));
+/** @type {import('vue').Ref<string>} */
+const icoPreset = ref("32");
+
 const formatOptions = [
   { id: "jpg", label: "JPG" },
   { id: "png", label: "PNG" },
@@ -141,6 +147,20 @@ function onCanvasWrapClick() {
 
 function setQualityPreset(n) {
   quality.value = n;
+}
+
+function resolvedIcoEdge() {
+  const n = Number(icoPreset.value);
+  if (Number.isFinite(n) && ICO_STANDARD_EDGES.includes(n)) return n;
+  return 32;
+}
+
+function icoSizesJSONForExport() {
+  return JSON.stringify([resolvedIcoEdge()]);
+}
+
+function icoSizesForBrowserExport() {
+  return [resolvedIcoEdge()];
 }
 
 function drawPreview() {
@@ -379,6 +399,7 @@ function resetAll() {
   isDraggingCrop.value = false;
   quality.value = 80;
   format.value = "jpg";
+  icoPreset.value = "32";
   if (fileInput.value) fileInput.value.value = "";
   const c = canvasEl.value;
   if (c) {
@@ -417,6 +438,29 @@ function dataUrlFromCanvas(oc, mime, q) {
   return oc.toDataURL(mime, q);
 }
 
+/** Wails 下用 Go（BestCompression）生成 ICO；否则回退到前端 icoEncode。 */
+async function encodeIcoBytes(oc) {
+  const sizesJson = icoSizesJSONForExport();
+  const sizesForJs = icoSizesForBrowserExport();
+  const pngDataUrl = oc.toDataURL("image/png");
+  if (typeof window !== "undefined" && window.go?.main?.App?.EncodeIcoFromPngBase64) {
+    try {
+      const { EncodeIcoFromPngBase64 } = await import("../../wailsjs/go/main/App");
+      const comma = pngDataUrl.indexOf(",");
+      const b64 =
+        comma >= 0 && pngDataUrl.startsWith("data:") ? pngDataUrl.slice(comma + 1) : pngDataUrl;
+      const icoB64 = await EncodeIcoFromPngBase64(b64, sizesJson);
+      const bin = atob(icoB64);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i) & 0xff;
+      return out;
+    } catch {
+      /* 回退 */
+    }
+  }
+  return buildIcoFromOutputCanvas(oc, sizesForJs);
+}
+
 async function download() {
   const im = sourceImage.value;
   if (!im) {
@@ -429,7 +473,7 @@ async function download() {
     const oc = buildOutputCanvas();
     if (!oc) return;
     try {
-      const icoBytes = await buildIcoFromOutputCanvas(oc);
+      const icoBytes = await encodeIcoBytes(oc);
       const blob = new Blob([icoBytes], { type: "image/x-icon" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -508,7 +552,7 @@ async function copyDataUrl() {
   const fmt = format.value;
   if (fmt === "ico") {
     try {
-      const icoBytes = await buildIcoFromOutputCanvas(oc);
+      const icoBytes = await encodeIcoBytes(oc);
       const blob = new Blob([icoBytes], { type: "image/x-icon" });
       if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
         await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
@@ -741,6 +785,15 @@ onUnmounted(() => {
               <span class="img-format-tile">{{ opt.label }}</span>
             </label>
           </div>
+          <div v-if="format === 'ico'" class="img-ico-size">
+            <p class="img-ico-size__title">{{ t("tools.image.icoSizesLabel") }}</p>
+            <div class="img-ico-size__grid">
+              <label v-for="opt in icoSizePresets" :key="opt.id" class="img-ico-size__lbl">
+                <input v-model="icoPreset" type="radio" class="sr-only" :value="opt.id" name="img-ico-size" />
+                <span class="img-ico-size__tile">{{ opt.label }}</span>
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="img-card img-card--actions">
@@ -776,6 +829,8 @@ onUnmounted(() => {
   gap: 1rem;
   max-width: 100%;
   min-height: 0;
+  flex: 1 1 0;
+  width: 100%;
 }
 
 .img-tool__head {
@@ -805,13 +860,15 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
   gap: 1.25rem;
   align-items: stretch;
-  min-height: clamp(400px, calc(100vh - 11rem), 720px);
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 @media (max-width: 900px) {
   .img-tool__grid {
     grid-template-columns: 1fr;
-    min-height: auto;
+    flex: none;
+    min-height: min(55vh, 560px);
   }
 }
 
@@ -982,8 +1039,8 @@ onUnmounted(() => {
 
 .img-tool__canvas-wrap {
   position: relative;
-  flex: 1;
-  min-height: 280px;
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1223,6 +1280,63 @@ html[data-theme="light"] .img-tool__empty {
 }
 
 .img-format-lbl input:checked + .img-format-tile {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(19, 127, 236, 0.14);
+}
+
+.img-ico-size {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.img-ico-size__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.img-ico-size__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.img-ico-size__lbl {
+  cursor: pointer;
+  margin: 0;
+}
+
+.img-ico-size__tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.2rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+
+.img-ico-size__lbl:hover .img-ico-size__tile {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(19, 127, 236, 0.08);
+}
+
+.img-ico-size__lbl input:checked + .img-ico-size__tile {
   border-color: var(--primary);
   color: var(--primary);
   background: rgba(19, 127, 236, 0.14);

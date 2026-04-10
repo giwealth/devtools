@@ -173,6 +173,7 @@
       "rotateFirst": "Set rotation to 0° before cropping",
       "pickFirst": "Please select an image first",
       "icoEncodeFailed": "Could not build ICO. Please try again.",
+      "icoSizesLabel": "ICO sizes",
       "avifUnsupported": "AVIF export is not supported in this environment. Choose another format."
     }
   }
