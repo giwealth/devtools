@@ -49,6 +49,20 @@
       "copyAria": "Copy output",
       "downloadAria": "Download JSON"
     },
+    "uuid": {
+      "title": "UUID Generator",
+      "desc": "Generate random UUID v4 in bulk with optional formatting. ",
+      "generate": "Generate",
+      "count": "Count",
+      "hyphen": "Hyphens",
+      "upperCase": "Uppercase",
+      "copy": "Copy",
+      "copyAll": "Copy all",
+      "download": "Download as .txt",
+      "result": "Output",
+      "placeholder": "Choose options and click Generate.",
+      "noCrypto": "Web Crypto (randomUUID / getRandomValues) is not available in this environment."
+    },
     "base64": {
       "title": "Base64 Encode",
       "desc": "UTF-8 text ↔ Base64. Ctrl+Enter: encode left / decode right.",
@@ -158,7 +172,7 @@
       "sizeLimit": "File size must not exceed 10MB",
       "rotateFirst": "Set rotation to 0° before cropping",
       "pickFirst": "Please select an image first",
-      "icoUnsupported": "ICO export is not available yet. Use PNG, JPG, or WEBP.",
+      "icoEncodeFailed": "Could not build ICO. Please try again.",
       "avifUnsupported": "AVIF export is not supported in this environment. Choose another format."
     }
   }

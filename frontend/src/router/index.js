@@ -5,6 +5,7 @@ import Base64Tool from "../tools/Base64Tool.vue";
 import TimestampTool from "../tools/TimestampTool.vue";
 import JwtTool from "../tools/JwtTool.vue";
 import ImageTool from "../tools/ImageTool.vue";
+import UuidTool from "../tools/UuidTool.vue";
 
 const LAST_ROUTE_KEY = "devtools-last-route";
 
@@ -24,6 +25,7 @@ const routes = [
     children: [
       { path: "json", name: "json", component: JsonTool, meta: { titleKey: "tools.json.title" } },
       { path: "base64", name: "base64", component: Base64Tool, meta: { titleKey: "tools.base64.title" } },
+      { path: "uuid", name: "uuid", component: UuidTool, meta: { titleKey: "tools.uuid.title" } },
       { path: "timestamp", name: "timestamp", component: TimestampTool, meta: { titleKey: "tools.timestamp.title" } },
       { path: "jwt", name: "jwt", component: JwtTool, meta: { titleKey: "tools.jwt.title" } },
       { path: "image", name: "image", component: ImageTool, meta: { titleKey: "tools.image.title" } },

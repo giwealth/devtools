@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, provide, computed } from "vue";
+import { ref, watch, onMounted, onUnmounted, provide, computed, nextTick } from "vue";
 import { useI18n } from "vue-i18n";
 import JsonTreeNode from "../components/json/JsonTreeNode.vue";
 import { highlightFormattedJSON } from "../utils/jsonHighlight";
@@ -21,12 +21,76 @@ const jsonTreeCollapsed = ref(new Set());
 const viewMode = ref("tree"); // 'formatted' | 'tree'
 
 const taScroll = ref(0);
+const inputTaRef = ref(null);
+const taMeasureRef = ref(null);
+/** 与每条逻辑行在 textarea 内换行后的像素高度一致（用于行号对齐） */
+const inputGutterHeightsPx = ref([19.5]);
 
-const inputLineCount = computed(() => {
-  const s = input.value;
-  if (!s) return 1;
-  return s.split("\n").length;
+const logicalInputLines = computed(() => {
+  if (!input.value) return [""];
+  return input.value.split("\n");
 });
+
+const inputLineCount = computed(() => logicalInputLines.value.length);
+
+let gutterMeasureRaf = 0;
+let inputTaResizeObserver = null;
+
+function measureInputGutterHeights() {
+  const ta = inputTaRef.value;
+  const m = taMeasureRef.value;
+  if (!ta || !m) return;
+
+  const cs = getComputedStyle(ta);
+  const padL = parseFloat(cs.paddingLeft) || 0;
+  const padR = parseFloat(cs.paddingRight) || 0;
+  const w = ta.clientWidth - padL - padR;
+  const lines = logicalInputLines.value;
+
+  const fontSize = parseFloat(cs.fontSize) || 13;
+  const lhRaw = cs.lineHeight;
+  let fallbackH = fontSize * 1.5;
+  if (lhRaw && lhRaw !== "normal") {
+    if (lhRaw.endsWith("px")) {
+      const n = parseFloat(lhRaw);
+      if (!Number.isNaN(n)) fallbackH = n;
+    } else if (!lhRaw.endsWith("%")) {
+      const n = parseFloat(lhRaw);
+      if (!Number.isNaN(n)) fallbackH = n * fontSize;
+    }
+  }
+
+  if (w < 4) {
+    inputGutterHeightsPx.value = lines.map(() => fallbackH);
+    return;
+  }
+
+  m.style.width = `${w}px`;
+  m.style.fontFamily = cs.fontFamily;
+  m.style.fontSize = cs.fontSize;
+  m.style.lineHeight = cs.lineHeight;
+  m.style.fontWeight = cs.fontWeight;
+  m.style.letterSpacing = cs.letterSpacing;
+  m.style.wordSpacing = cs.wordSpacing;
+  if (cs.tabSize) m.style.tabSize = cs.tabSize;
+
+  const heights = [];
+  for (const line of lines) {
+    m.textContent = line;
+    let h = m.scrollHeight;
+    if (h < fallbackH) h = fallbackH;
+    heights.push(h);
+  }
+  inputGutterHeightsPx.value = heights;
+}
+
+function scheduleInputGutterMeasure() {
+  if (gutterMeasureRaf) cancelAnimationFrame(gutterMeasureRaf);
+  gutterMeasureRaf = requestAnimationFrame(() => {
+    gutterMeasureRaf = 0;
+    void nextTick(measureInputGutterHeights);
+  });
+}
 
 const treeActionsEnabled = computed(() => parsedData.value != null && !inputError.value);
 const jsonTreeIndentPx = computed(() => {
@@ -194,6 +258,7 @@ function onInputScroll(e) {
 }
 
 watch(input, () => {
+  scheduleInputGutterMeasure();
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     applyBeautify();
@@ -206,9 +271,21 @@ watch(indentMode, () => {
 
 onMounted(() => {
   applyBeautify();
+  scheduleInputGutterMeasure();
+  const ta = inputTaRef.value;
+  if (ta && typeof ResizeObserver !== "undefined") {
+    inputTaResizeObserver = new ResizeObserver(() => scheduleInputGutterMeasure());
+    inputTaResizeObserver.observe(ta);
+  }
+  window.addEventListener("resize", scheduleInputGutterMeasure);
 });
 
-onUnmounted(() => clearTimeout(debounceTimer));
+onUnmounted(() => {
+  clearTimeout(debounceTimer);
+  if (gutterMeasureRaf) cancelAnimationFrame(gutterMeasureRaf);
+  window.removeEventListener("resize", scheduleInputGutterMeasure);
+  inputTaResizeObserver?.disconnect();
+});
 
 function validateLabel() {
   if (validateState.value === "ok") return t("tools.json.valid");
@@ -300,12 +377,21 @@ function validateLabel() {
           <span class="j-pane__head-meta mono">{{ t("tools.json.linesCount", { n: inputLineCount }) }}</span>
         </div>
         <div class="j-editor">
+          <div ref="taMeasureRef" class="j-ta-measure mono" aria-hidden="true" />
           <div class="j-gutter" aria-hidden="true">
             <div class="j-gutter__inner" :style="{ transform: `translateY(-${taScroll}px)` }">
-              <div v-for="ln in inputLineCount" :key="ln" class="j-gutter__ln">{{ ln }}</div>
+              <div
+                v-for="(_, i) in logicalInputLines"
+                :key="i"
+                class="j-gutter__ln"
+                :style="{ minHeight: (inputGutterHeightsPx[i] ?? 19.5) + 'px' }"
+              >
+                {{ i + 1 }}
+              </div>
             </div>
           </div>
           <textarea
+            ref="inputTaRef"
             v-model="input"
             class="j-ta mono"
             spellcheck="false"
@@ -563,10 +649,28 @@ function validateLabel() {
 }
 
 .j-editor {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 360px;
   overflow: hidden;
+}
+
+.j-ta-measure {
+  position: absolute;
+  left: -99999px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: none;
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .j-gutter {
@@ -580,15 +684,19 @@ function validateLabel() {
 
 .j-gutter__inner {
   will-change: transform;
+  padding-bottom: 0.75rem;
 }
 
 .j-gutter__ln {
-  height: calc(0.8125rem * 1.5);
+  box-sizing: border-box;
   font-size: 0.8125rem;
   line-height: 1.5;
   text-align: right;
   color: var(--text-muted);
   font-family: var(--font-mono);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
 }
 
 .j-ta {

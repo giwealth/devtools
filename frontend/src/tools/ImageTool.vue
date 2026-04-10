@@ -2,6 +2,7 @@
 import { ref, shallowRef, watch, onMounted, onUnmounted, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { copyText } from "../utils/clipboard";
+import { buildIcoFromOutputCanvas } from "../utils/icoEncode";
 
 const { t } = useI18n();
 
@@ -77,6 +78,10 @@ function syncFormatByMimeType(mime) {
   }
   if (m === "image/avif") {
     format.value = "avif";
+    return;
+  }
+  if (m === "image/x-icon" || m === "image/vnd.microsoft.icon") {
+    format.value = "ico";
     return;
   }
   // GIF/BMP/TIFF 等未直接提供同格式导出，默认回落到 PNG。
@@ -412,15 +417,29 @@ function dataUrlFromCanvas(oc, mime, q) {
   return oc.toDataURL(mime, q);
 }
 
-function download() {
+async function download() {
   const im = sourceImage.value;
   if (!im) {
     alert(t("tools.image.pickFirst"));
     return;
   }
   const fmt = format.value;
+
   if (fmt === "ico") {
-    alert(t("tools.image.icoUnsupported"));
+    const oc = buildOutputCanvas();
+    if (!oc) return;
+    try {
+      const icoBytes = await buildIcoFromOutputCanvas(oc);
+      const blob = new Blob([icoBytes], { type: "image/x-icon" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `image_${Date.now()}.ico`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    } catch {
+      alert(t("tools.image.icoEncodeFailed"));
+    }
     return;
   }
 
@@ -488,7 +507,17 @@ async function copyDataUrl() {
   if (!oc) return;
   const fmt = format.value;
   if (fmt === "ico") {
-    alert(t("tools.image.icoUnsupported"));
+    try {
+      const icoBytes = await buildIcoFromOutputCanvas(oc);
+      const blob = new Blob([icoBytes], { type: "image/x-icon" });
+      if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        return;
+      }
+    } catch {
+      /* fallthrough */
+    }
+    alert(t("common.copyFailed"));
     return;
   }
   const q = Math.max(0, Math.min(1, quality.value / 100));
@@ -545,7 +574,7 @@ onUnmounted(() => {
     <input
       ref="fileInput"
       type="file"
-      accept="image/jpeg,image/png,image/webp,image/gif"
+      accept="image/jpeg,image/png,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon,.ico"
       class="img-tool__file"
       @change="onFileChange"
     />

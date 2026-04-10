@@ -49,6 +49,20 @@
       "copyAria": "复制结果",
       "downloadAria": "下载 JSON"
     },
+    "uuid": {
+      "title": "UUID 生成器",
+      "desc": "生成随机 UUID v4，支持批量与多种输出格式。",
+      "generate": "生成",
+      "count": "数量",
+      "hyphen": "带连字符",
+      "upperCase": "大写",
+      "copy": "复制",
+      "copyAll": "复制全部",
+      "download": "下载为文本",
+      "result": "结果",
+      "placeholder": "设置选项后点击「生成」。",
+      "noCrypto": "当前环境无法使用 Web Crypto（randomUUID / getRandomValues），无法生成 UUID。"
+    },
     "base64": {
       "title": "Base64编码",
       "desc": "UTF-8 文本 ↔ Base64。Ctrl+Enter：左侧编码 / 右侧解码。",
@@ -158,7 +172,7 @@
       "sizeLimit": "文件大小不能超过 10MB",
       "rotateFirst": "请先归零旋转角度再裁剪",
       "pickFirst": "请先选择图片",
-      "icoUnsupported": "ICO 导出暂未支持，请选择 PNG / JPG / WEBP。",
+      "icoEncodeFailed": "ICO 生成失败，请重试。",
       "avifUnsupported": "当前环境无法导出 AVIF，请换用其他格式。"
     }
   }

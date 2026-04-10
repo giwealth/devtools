@@ -14,6 +14,7 @@ const nav = [
   { path: "/jwt", titleKey: "tools.jwt.title" },
   { path: "/timestamp", titleKey: "tools.timestamp.title" },
   { path: "/base64", titleKey: "tools.base64.title" },
+  { path: "/uuid", titleKey: "tools.uuid.title" },
   { path: "/json", titleKey: "tools.json.title" },
 ];
 
