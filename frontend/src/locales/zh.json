@@ -91,6 +91,7 @@
       "unit": "单位",
       "timezone": "时区",
       "currentTime": "当前时间",
+      "clickToCopy": "点击复制",
       "now": "当前",
       "pause": "暂停",
       "resume": "继续",
@@ -104,6 +105,7 @@
       "unixTimestampOutMs": "Unix 时间戳 (毫秒)",
       "convert": "转换",
       "useNow": "当前时间",
+      "clearTsOnly": "清空",
       "clearAll": "清空",
       "copyOutput": "复制结果"
     },

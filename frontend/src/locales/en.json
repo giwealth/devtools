@@ -91,6 +91,7 @@
       "unit": "Unit",
       "timezone": "Timezone",
       "currentTime": "Current time",
+      "clickToCopy": "Click to copy",
       "now": "Now",
       "pause": "Pause",
       "resume": "Resume",
@@ -104,6 +105,7 @@
       "unixTimestampOutMs": "Unix timestamp (ms)",
       "convert": "Convert",
       "useNow": "Use current time",
+      "clearTsOnly": "Clear input",
       "clearAll": "Clear",
       "copyOutput": "Copy result"
     },

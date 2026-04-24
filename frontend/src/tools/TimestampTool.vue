@@ -74,6 +74,18 @@ function useNow() {
   applyDateToTs();
 }
 
+function useNowTs() {
+  const now = new Date();
+  tsIn.value =
+    timeUnit.value === "milliseconds" ? String(now.getTime()) : String(Math.floor(now.getTime() / 1000));
+  applyTsToDate();
+}
+
+function clearTsOnly() {
+  tsIn.value = "";
+  dateOut.value = "";
+}
+
 function clearAll() {
   tsIn.value = "";
   dateOut.value = "";
@@ -130,7 +142,10 @@ async function copyField(val) {
           </svg>
         </div>
         <div class="ts-clock-card__body">
-          <span class="ts-clock-card__label">{{ t("tools.timestamp.currentTime") }}</span>
+          <div class="ts-clock-card__label-row">
+            <span class="ts-clock-card__label">{{ t("tools.timestamp.currentTime") }}</span>
+            <span class="ts-clock-card__copy-hint">{{ t("tools.timestamp.clickToCopy") }}</span>
+          </div>
           <button
             type="button"
             class="ts-clock-card__ts ts-clock-card__ts--copy mono"
@@ -251,6 +266,11 @@ async function copyField(val) {
               </button>
             </div>
           </div>
+          <div class="ts-foot-actions">
+            <button type="button" class="ts-link ts-link--primary" @click="useNowTs">{{ t("tools.timestamp.useNow") }}</button>
+            <span class="ts-foot-actions__sep" aria-hidden="true">|</span>
+            <button type="button" class="ts-link" @click="clearTsOnly">{{ t("tools.timestamp.clearTsOnly") }}</button>
+          </div>
         </div>
 
         <div class="ts-divider" />
@@ -317,8 +337,12 @@ async function copyField(val) {
 }
 
 .ts-page {
-  max-width: 1000px;
-  margin: 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .ts-page__title {
@@ -389,12 +413,26 @@ async function copyField(val) {
   flex: 1;
 }
 
+.ts-clock-card__label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+}
+
 .ts-clock-card__label {
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
+}
+
+.ts-clock-card__copy-hint {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.9;
 }
 
 .ts-clock-card__ts {
